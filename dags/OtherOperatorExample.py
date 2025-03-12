@@ -72,7 +72,7 @@ with DAG(
                     "limit_memory": "1Gi",
                     "limit_cpu": "1",
                     "labels": {"purpose": "data-extraction"},
-                    "annotations": {"sidecar.istio.io/inject": "false"},
+                    "annotations": {"sidecar.istio.io/inject": "false"}
                 }
             }
         )
@@ -103,7 +103,7 @@ with DAG(
                 "request_cpu": "0.5",
                 "limit_memory": "1Gi",
                 "limit_cpu": "1",
-                "namespace": "airflow-load",  # 다른 네임스페이스에도 배포 가능
+                "namespace": "airflow",  # 다른 네임스페이스에도 배포 가능
             }
         }
     )
@@ -117,7 +117,7 @@ with DAG(
                 "volumes": [
                     {
                         "name": "log-volume",
-                        "persistent_volume_claim": {"claim_name": "airflow-logs-pvc"}
+                        "persistent_volume_claim": {"claim_name": "airflow-logs"}
                     },
                 ],
                 "volume_mounts": [
@@ -131,6 +131,18 @@ with DAG(
         }
     )
 
-    end = EmptyOperator(task_id='end')
-    
-    start >> process_data >> load_data_task >> archive_logs >> end
+    end = EmptyOperator(
+        task_id='end',
+    )
+
+    # 태스크 의존성 설정
+    chain(
+        start,
+        process_data,
+        load_data_task,
+        archive_logs,
+        end
+    )
+
+    # Alternative dependency notation:
+    # start >> process_data >> load_data_task >> archive_logs >> end
